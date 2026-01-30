@@ -4,184 +4,532 @@
     <meta charset="UTF-8">
     <title>Gestionale Estro Saloon</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Bootstrap CSS & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { background-color: #f4f6f8; font-family: 'Segoe UI', sans-serif; }
-        .container { max-width: 900px; margin-top: 30px; }
+        :root {
+            --primary: #4a3b32; /* Marrone scuro */
+            --accent: #b08d55;  /* Oro/Bronzo */
+            --bg: #f4efe9;      /* Beige */
+            --white: #ffffff;
+        }
+
+        body { background-color: var(--bg); font-family: 'Lato', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Stile Intestazione */
-        .header-admin { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #ddd; }
-        .header-admin h2 { color: #333; font-weight: bold; }
+        /* HEADER FISSO */
+        .admin-header {
+            background-color: var(--white);
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .nav-controls { display: flex; align-items: center; gap: 10px; }
+        .date-display { font-size: 1.2rem; font-weight: bold; color: var(--primary); min-width: 180px; text-align: center; text-transform: capitalize;}
+        .btn-nav { border: none; background: none; font-size: 1.5rem; color: var(--accent); cursor: pointer; padding: 0 10px;}
+        .btn-nav:hover { color: var(--primary); transform: scale(1.1); }
 
-        /* Stile Gruppo Giornaliero */
-        .giorno-container { background: white; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 5px solid #d4af37; }
-        .data-header { font-size: 1.3rem; font-weight: bold; color: #d4af37; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        /* AREA CONTENUTO SCORREVOLE */
+        .content-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
 
-        /* Stile Card Appuntamento */
-        .appuntamento-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; transition: background 0.2s; }
-        .appuntamento-item:last-child { border-bottom: none; }
-        .appuntamento-item:hover { background-color: #fafafa; }
+        /* VISTA MESE (CALENDARIO) */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .week-day { text-align: center; font-weight: bold; color: #888; padding: 5px; text-transform: uppercase; font-size: 0.8rem; }
+        
+        .day-cell {
+            background: var(--white);
+            min-height: 100px;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            position: relative;
+        }
+        .day-cell:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .day-number { font-weight: bold; color: var(--primary); font-size: 1.1rem; display: block; margin-bottom: 5px; }
+        .day-today { background-color: #fff8e1; border: 2px solid var(--accent); }
+        
+        /* Pallini Appuntamenti */
+        .appt-indicator {
+            background-color: var(--accent);
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-        .info-time { font-size: 1.2rem; font-weight: bold; color: #333; min-width: 70px; }
-        .info-cliente { flex-grow: 1; margin-left: 15px; }
-        .cliente-nome { font-weight: bold; font-size: 1.1rem; color: #000; }
-        .cliente-dettagli { font-size: 0.9rem; color: #666; }
-        .cliente-note { font-size: 0.85rem; color: #d63384; font-style: italic; margin-top: 2px; }
+        /* VISTA GIORNO (LISTA) */
+        .day-view-container { max-width: 700px; margin: 0 auto; }
+        .appt-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            border-left: 6px solid var(--accent);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .appt-card:hover { transform: translateX(5px); }
+        
+        .time-box { 
+            font-size: 1.3rem; font-weight: 700; color: var(--primary); 
+            padding-right: 20px; border-right: 1px solid #eee; margin-right: 20px; min-width: 90px; text-align: center;
+        }
+        .info-box { flex-grow: 1; }
+        .client-name { font-weight: bold; font-size: 1.1rem; color: #333; }
+        .service-name { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+        .details-row { color: #666; font-size: 0.85rem; margin-top: 3px; }
+        
+        /* TASTO + GALLEGGIANTE */
+        .fab-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--primary);
+            color: var(--accent);
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.2s;
+        }
+        .fab-btn:hover { transform: scale(1.1) rotate(90deg); background-color: #332822; }
 
-        .azioni { min-width: 100px; text-align: right; }
-        .azioni button { margin-left: 5px; }
+        .btn-view-toggle.active { background-color: var(--primary); color: white !important; }
+        .obbligatorio { color: #dc3545; }
+        .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:2000; display:flex; justify-content:center; align-items:center; }
     </style>
 </head>
 <body>
 
-<div class="container pb-5">
-    <div class="header-admin">
-        <h2>📅 Agenda Appuntamenti</h2>
-        <button onclick="caricaAppuntamenti()" class="btn btn-dark">🔄 Aggiorna</button>
+<!-- Header Navigazione -->
+<div class="admin-header">
+    <div style="font-weight: bold; color: var(--primary); font-size: 1.2rem;">Estro Admin</div>
+    
+    <div class="nav-controls">
+        <button class="btn-nav" onclick="naviga(-1)"><i class="bi bi-chevron-left"></i></button>
+        <div class="date-display" id="dateDisplay">Caricamento...</div>
+        <button class="btn-nav" onclick="naviga(1)"><i class="bi bi-chevron-right"></i></button>
     </div>
 
-    <div id="lista-agenda">
-        <div class="text-center mt-5"><div class="spinner-border text-warning"></div></div>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-dark btn-view-toggle active" id="btn-month" onclick="cambiaVista('mese')">Mese</button>
+        <button type="button" class="btn btn-outline-dark btn-view-toggle" id="btn-day" onclick="cambiaVista('giorno')">Giorno</button>
     </div>
 </div>
 
-<div class="modal fade" id="editModal" tabindex="-1">
+<!-- Area Contenuto -->
+<div class="content-area">
+    <!-- Vista Mese -->
+    <div id="month-view" class="calendar-grid"></div>
+
+    <!-- Vista Giorno -->
+    <div id="day-view" class="day-view-container" style="display: none;">
+        <div id="day-list"></div>
+    </div>
+</div>
+
+<!-- Tasto Aggiungi -->
+<button class="fab-btn" onclick="apriNuovo()" title="Nuovo Appuntamento">+</button>
+
+<!-- Loading Spinner -->
+<div id="loader" class="loading-overlay" style="display:none;">
+    <div class="spinner-border text-warning" role="status"></div>
+</div>
+
+<!-- MODAL: Gestione Appuntamento -->
+<div class="modal fade" id="apptModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Modifica Appuntamento</h5>
+                <h5 class="modal-title" id="modalTitle">Gestione Appuntamento</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="edit-id">
-                <div class="mb-2"><label>Cliente</label><input type="text" id="edit-cliente" class="form-control"></div>
-                <div class="mb-2"><label>Telefono</label><input type="text" id="edit-telefono" class="form-control"></div>
-                <div class="mb-2"><label>Servizio</label><select id="edit-servizio" class="form-select">
-                    <option>Taglio Donna</option><option>Piega e Stile</option><option>Colore Completo</option><option>Taglio Uomo</option>
-                </select></div>
-                <div class="row">
-                    <div class="col"><label>Data</label><input type="date" id="edit-data" class="form-control"></div>
-                    <div class="col"><label>Ora</label><input type="text" id="edit-ora" class="form-control" placeholder="HH:MM"></div>
+                <input type="hidden" id="appt-id"> <!-- ID vuoto = Nuovo -->
+                
+                <div class="mb-3">
+                    <label class="form-label">Cliente <span class="obbligatorio">*</span></label>
+                    <input type="text" id="appt-cliente" class="form-control" placeholder="Nome Cognome">
                 </div>
-                <div class="mt-2"><label>Note</label><textarea id="edit-note" class="form-control"></textarea></div>
+                
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Telefono <span class="obbligatorio">*</span></label>
+                        <input type="text" id="appt-telefono" class="form-control">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Servizio <span class="obbligatorio">*</span></label>
+                        <select id="appt-servizio" class="form-select">
+                            <option>Taglio Donna</option>
+                            <option>Piega e Stile</option>
+                            <option>Colore Completo</option>
+                            <option>Taglio Uomo</option>
+                            <option>Trattamento Speciale</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Data <span class="obbligatorio">*</span></label>
+                        <input type="date" id="appt-data" class="form-control">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Ora <span class="obbligatorio">*</span></label>
+                        <input type="text" id="appt-ora" class="form-control" placeholder="09:00">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Note</label>
+                    <textarea id="appt-note" class="form-control" rows="2"></textarea>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="btn btn-primary" onclick="salvaModifiche()">Salva Modifiche</button>
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-danger" id="btn-delete" style="display:none;" onclick="eliminaCorrente()">🗑️ Elimina</button>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-primary" onclick="salvaAppuntamento()">Salva</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Script Bootstrap -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-    let appuntamentiGlobali = []; // Qui salviamo i dati in memoria (La Soluzione!)
+    // --- CONFIGURAZIONE URL AUTOMATICA ---
+    // Se siamo su Render, usa percorso relativo. Se siamo in locale, usa URL completo.
+    const PRODUCTION_HOST = 'booking-app-tmr4.onrender.com';
+    let BASE_URL = '';
+    
+    // Controllo se stiamo eseguendo in locale (file://, localhost, blob, ecc)
+    if (!window.location.hostname.includes('onrender.com')) {
+        BASE_URL = 'https://' + PRODUCTION_HOST;
+        console.log("🛠️ Modalità Locale attivata. Backend:", BASE_URL);
+    }
 
-    async function caricaAppuntamenti() {
-        const res = await fetch('/lista_appuntamenti');
-        const dati = await res.json();
+    // --- VARIABILI DI STATO ---
+    let currentDate = new Date(); // La data che stiamo visualizzando
+    let currentView = 'mese';     // 'mese' oppure 'giorno'
+    let appointments = [];        // Dati scaricati dal server
+    const modal = new bootstrap.Modal(document.getElementById('apptModal'));
+
+    // --- AVVIO ---
+    document.addEventListener('DOMContentLoaded', () => {
+        scaricaDati();
+    });
+
+    // 1. SCARICA I DATI DAL SERVER
+    async function scaricaDati() {
+        mostraLoader(true);
+        try {
+            const res = await fetch(BASE_URL + '/lista_appuntamenti');
+            if (!res.ok) throw new Error("Errore Server: " + res.status);
+            appointments = await res.json();
+            render();
+        } catch (error) {
+            console.error(error);
+            // Se fallisce, non mostriamo alert continui ma logghiamo
+            if(appointments.length === 0) {
+                 document.getElementById('dateDisplay').textContent = "Errore Connessione";
+            }
+        } finally {
+            mostraLoader(false);
+        }
+    }
+
+    // 2. MOTORE GRAFICO (Render)
+    function render() {
+        aggiornaHeader();
         
-        // Salviamo i dati nella variabile globale così non si rompono con gli apostrofi
-        appuntamentiGlobali = dati; 
+        // Gestione visibilità sezioni
+        const monthDiv = document.getElementById('month-view');
+        const dayDiv = document.getElementById('day-view');
+        const btnMonth = document.getElementById('btn-month');
+        const btnDay = document.getElementById('btn-day');
 
-        const container = document.getElementById('lista-agenda');
+        if (currentView === 'mese') {
+            monthDiv.style.display = 'grid';
+            dayDiv.style.display = 'none';
+            btnMonth.classList.add('active');
+            btnDay.classList.remove('active');
+            disegnaMese();
+        } else {
+            monthDiv.style.display = 'none';
+            dayDiv.style.display = 'block';
+            btnMonth.classList.remove('active');
+            btnDay.classList.add('active');
+            disegnaGiorno();
+        }
+    }
+
+    function aggiornaHeader() {
+        const display = document.getElementById('dateDisplay');
+        const options = currentView === 'mese' 
+            ? { month: 'long', year: 'numeric' } 
+            : { weekday: 'long', day: 'numeric', month: 'long' };
+        
+        display.textContent = currentDate.toLocaleDateString('it-IT', options);
+    }
+
+    // 3. DISEGNA CALENDARIO MENSILE
+    function disegnaMese() {
+        const grid = document.getElementById('month-view');
+        grid.innerHTML = ''; // Pulisce
+
+        // Intestazioni giorni
+        const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+        days.forEach(d => grid.innerHTML += `<div class="week-day">${d}</div>`);
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        // Calcoli calendario
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        let startCol = firstDay.getDay(); 
+        if (startCol === 0) startCol = 7; // Domenica da 0 a 7
+
+        // Celle vuote iniziali
+        for(let i=1; i<startCol; i++) {
+            grid.innerHTML += `<div></div>`;
+        }
+
+        // Celle giorni
+        for(let day=1; day<=lastDay.getDate(); day++) {
+            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const isToday = (new Date().toISOString().split('T')[0] === dateStr);
+            
+            // Trova appuntamenti di questo giorno
+            const appsToday = appointments.filter(a => a.data === dateStr);
+            
+            // Crea HTML pallini
+            let dots = '';
+            appsToday.slice(0, 3).forEach(a => {
+                dots += `<div class="appt-indicator">${a.ora} ${a.cliente}</div>`;
+            });
+            if(appsToday.length > 3) dots += `<div class="appt-indicator" style="background:#888">+${appsToday.length-3} altri</div>`;
+
+            const cell = document.createElement('div');
+            cell.className = `day-cell ${isToday ? 'day-today' : ''}`;
+            cell.innerHTML = `<span class="day-number">${day}</span>${dots}`;
+            cell.onclick = () => vaiAlGiorno(dateStr);
+            grid.appendChild(cell);
+        }
+    }
+
+    // 4. DISEGNA LISTA GIORNALIERA
+    function disegnaGiorno() {
+        const container = document.getElementById('day-list');
         container.innerHTML = '';
 
-        if (dati.length === 0) {
-            container.innerHTML = '<h4 class="text-center text-muted">Nessun appuntamento in agenda.</h4>';
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // Filtra e ordina
+        const appsToday = appointments
+            .filter(a => a.data === dateStr)
+            .sort((a,b) => a.ora.localeCompare(b.ora));
+
+        if(appsToday.length === 0) {
+            container.innerHTML = `
+                <div class="text-center mt-5 text-muted">
+                    <h3>☕ Nessun appuntamento</h3>
+                    <p>Goditi la pausa o inserisci una prenotazione col tasto +</p>
+                </div>`;
             return;
         }
 
-        // Raggruppa per data
-        const gruppi = {};
-        dati.forEach(app => {
-            if (!gruppi[app.data]) gruppi[app.data] = [];
-            gruppi[app.data].push(app);
+        appsToday.forEach(a => {
+            container.innerHTML += `
+            <div class="appt-card" onclick="apriModifica(${a.id})">
+                <div class="time-box">${a.ora}</div>
+                <div class="info-box">
+                    <div class="client-name">${a.cliente}</div>
+                    <div class="service-name">${a.servizio}</div>
+                    <div class="details-row">📞 ${a.telefono || 'N/D'} ${a.note ? ' | 📝 Note presenti' : ''}</div>
+                </div>
+                <div><i class="bi bi-chevron-right text-muted"></i></div>
+            </div>`;
         });
-
-        // Genera HTML per ogni giorno
-        for (const [data, appuntamenti] of Object.entries(gruppi)) {
-            const dataBella = data.split('-').reverse().join('/');
-            
-            let htmlGruppo = `<div class="giorno-container">
-                <div class="data-header">🗓️ ${dataBella}</div>`;
-            
-            appuntamenti.forEach(app => {
-                // ORA PASSIAMO SOLO L'ID (app.id) - È indistruttibile!
-                htmlGruppo += `
-                <div class="appuntamento-item">
-                    <div class="info-time">${app.ora}</div>
-                    <div class="info-cliente">
-                        <div class="cliente-nome">${app.cliente}</div>
-                        <div class="cliente-dettagli">📞 ${app.telefono || '-'} | ✂️ ${app.servizio}</div>
-                        ${app.note ? `<div class="cliente-note">📝 Note: ${app.note}</div>` : ''}
-                    </div>
-                    <div class="azioni">
-                        <button onclick="apriModifica(${app.id})" class="btn btn-outline-primary btn-sm">✏️ Modifica</button>
-                        <button onclick="elimina(${app.id})" class="btn btn-outline-danger btn-sm">🗑️</button>
-                    </div>
-                </div>`;
-            });
-
-            htmlGruppo += `</div>`;
-            container.innerHTML += htmlGruppo;
-        }
     }
 
-    async function elimina(id) {
-        if(confirm("Eliminare questo appuntamento?")) {
-            await fetch(`/cancella/${id}`, { method: 'DELETE' });
-            caricaAppuntamenti();
-        }
-    }
-
-    // Funzione Modifica Aggiornata e Sicura
-    function apriModifica(id) {
-        // Cerca l'appuntamento nella memoria usando l'ID
-        const app = appuntamentiGlobali.find(a => a.id === id);
-        
-        if (app) {
-            document.getElementById('edit-id').value = app.id;
-            document.getElementById('edit-cliente').value = app.cliente;
-            document.getElementById('edit-telefono').value = app.telefono || '';
-            document.getElementById('edit-servizio').value = app.servizio;
-            document.getElementById('edit-data').value = app.data;
-            document.getElementById('edit-ora').value = app.ora;
-            document.getElementById('edit-note').value = app.note || '';
-            editModal.show();
+    // --- NAVIGAZIONE ---
+    function naviga(dir) {
+        if (currentView === 'mese') {
+            currentDate.setMonth(currentDate.getMonth() + dir);
         } else {
-            alert("Errore: impossibile trovare i dati di questo appuntamento.");
+            currentDate.setDate(currentDate.getDate() + dir);
         }
+        render();
     }
 
-    async function salvaModifiche() {
-        const id = document.getElementById('edit-id').value;
+    function cambiaVista(view) {
+        currentView = view;
+        render();
+    }
+
+    function vaiAlGiorno(dateIso) {
+        currentDate = new Date(dateIso);
+        cambiaVista('giorno');
+    }
+
+    // --- LOGICA MODAL (NUOVO / MODIFICA) ---
+    function apriNuovo() {
+        document.getElementById('modalTitle').textContent = "Nuova Prenotazione";
+        document.getElementById('appt-id').value = ""; // ID Vuoto
+        document.getElementById('btn-delete').style.display = 'none';
+        
+        // Reset campi
+        document.getElementById('appt-cliente').value = "";
+        document.getElementById('appt-telefono').value = "";
+        document.getElementById('appt-note').value = "";
+        // Imposta data corrente della vista
+        document.getElementById('appt-data').value = currentDate.toISOString().split('T')[0];
+        
+        modal.show();
+    }
+
+    function apriModifica(id) {
+        const app = appointments.find(a => a.id === id);
+        if(!app) return;
+
+        document.getElementById('modalTitle').textContent = "Modifica Prenotazione";
+        document.getElementById('appt-id').value = app.id;
+        document.getElementById('btn-delete').style.display = 'block';
+
+        document.getElementById('appt-cliente').value = app.cliente;
+        document.getElementById('appt-telefono').value = app.telefono;
+        document.getElementById('appt-servizio').value = app.servizio;
+        document.getElementById('appt-data').value = app.data;
+        document.getElementById('appt-ora').value = app.ora;
+        document.getElementById('appt-note').value = app.note || "";
+
+        modal.show();
+    }
+
+    // --- SALVATAGGIO ---
+    async function salvaAppuntamento() {
+        mostraLoader(true);
+        const id = document.getElementById('appt-id').value;
+        
         const payload = {
-            cliente: document.getElementById('edit-cliente').value,
-            telefono: document.getElementById('edit-telefono').value,
-            servizio: document.getElementById('edit-servizio').value,
-            data: document.getElementById('edit-data').value,
-            ora: document.getElementById('edit-ora').value,
-            note: document.getElementById('edit-note').value
+            cliente: document.getElementById('appt-cliente').value,
+            telefono: document.getElementById('appt-telefono').value,
+            servizio: document.getElementById('appt-servizio').value,
+            data: document.getElementById('appt-data').value,
+            ora: document.getElementById('appt-ora').value,
+            note: document.getElementById('appt-note').value
         };
 
-        const res = await fetch(`/modifica/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
+        if(!payload.cliente || !payload.data || !payload.ora) {
+            mostraLoader(false);
+            alert("Compila tutti i campi obbligatori!");
+            return;
+        }
 
-        if (res.ok) {
-            editModal.hide();
-            caricaAppuntamenti();
+        let url, method, body;
+
+        if (id) {
+            // MODIFICA (PUT JSON)
+            url = `/modifica/${id}`;
+            method = 'PUT';
+            body = JSON.stringify(payload);
         } else {
-            const err = await res.json();
-            alert("Errore: " + err.detail);
+            // NUOVO (POST Query Params)
+            const params = new URLSearchParams({
+                nome: payload.cliente, // Mappatura 'cliente' -> 'nome' per il backend
+                telefono: payload.telefono,
+                servizio: payload.servizio,
+                data: payload.data,
+                ora: payload.ora,
+                note: payload.note
+            });
+            url = `/prenota?${params.toString()}`;
+            method = 'POST';
+            body = null;
+        }
+
+        try {
+            const options = { method: method };
+            if (method === 'PUT') {
+                options.headers = { 'Content-Type': 'application/json' };
+                options.body = body;
+            }
+
+            const res = await fetch(BASE_URL + url, options);
+            
+            if (res.ok) {
+                modal.hide();
+                await scaricaDati(); // Ricarica i dati aggiornati
+            } else {
+                const err = await res.json();
+                alert("Errore: " + err.detail);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Errore di comunicazione col server.");
+        } finally {
+            mostraLoader(false);
         }
     }
 
-    caricaAppuntamenti();
+    // --- ELIMINAZIONE ---
+    async function eliminaCorrente() {
+        const id = document.getElementById('appt-id').value;
+        if(confirm("Vuoi davvero cancellare questo appuntamento?")) {
+            mostraLoader(true);
+            try {
+                await fetch(BASE_URL + `/cancella/${id}`, { method: 'DELETE' });
+                modal.hide();
+                await scaricaDati();
+            } catch (e) {
+                alert("Errore durante la cancellazione");
+            } finally {
+                mostraLoader(false);
+            }
+        }
+    }
+
+    function mostraLoader(show) {
+        document.getElementById('loader').style.display = show ? 'flex' : 'none';
+    }
+
 </script>
 </body>
 </html>
