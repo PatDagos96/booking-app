@@ -4,69 +4,186 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estro Saloon - Prenotazioni</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #121212; color: #d4af37; font-family: 'Lato', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px;}
-        .card { background-color: #1e1e1e; border: 1px solid #d4af37; border-radius: 15px; box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); max-width: 500px; width: 100%; }
-        h2 { font-family: 'Playfair Display', serif; color: #d4af37; text-transform: uppercase; letter-spacing: 2px; }
-        label { color: #f0f0f0; margin-bottom: 5px; font-size: 0.9em;}
-        .form-control, .form-select, textarea { background-color: #2c2c2c; border: 1px solid #555; color: white; }
-        .form-control:focus, .form-select:focus, textarea:focus { background-color: #333; color: white; border-color: #d4af37; box-shadow: 0 0 5px rgba(212, 175, 55, 0.5); }
-        
-        #zona-orari { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-        .btn-orario { background-color: transparent; border: 1px solid #d4af37; color: #d4af37; padding: 8px; border-radius: 5px; transition: all 0.3s; }
-        .btn-orario:hover { background-color: #d4af37; color: #000; }
-        .btn-orario.selezionato { background-color: #d4af37; color: black; font-weight: bold; box-shadow: 0 0 10px #d4af37; }
-        
-        .btn-prenota { background: linear-gradient(45deg, #b8860b, #ffd700); color: black; font-weight: bold; border: none; margin-top: 20px; padding: 12px; font-size: 1.1em;}
-        .btn-prenota:hover { background: linear-gradient(45deg, #ffd700, #b8860b); transform: scale(1.02); }
-        .obbligatorio { color: #ff4444; margin-left: 3px; }
+        :root {
+            --bg-color: #f4efe9; /* Beige Latte */
+            --card-bg: #ffffff;  /* Bianco */
+            --primary-text: #4a3b32; /* Marrone Caffè */
+            --accent-color: #b08d55; /* Bronzo/Sabbia Scuro */
+            --accent-hover: #8c6b3f; /* Bronzo più scuro */
+            --input-bg: #fafafa;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            font-family: 'Lato', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 20px;
+            /* Ombra morbida e calda invece del glow neon */
+            box-shadow: 0 10px 30px rgba(74, 59, 50, 0.1); 
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* Testata decorativa */
+        .card-header-custom {
+            background-color: var(--primary-text);
+            padding: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            font-family: 'Great Vibes', cursive; /* Font firma elegante */
+            color: #fff; /* Scritta bianca su sfondo scuro */
+            font-size: 3.5rem;
+            margin: 0;
+            font-weight: normal;
+            letter-spacing: 2px;
+        }
+
+        label {
+            color: var(--primary-text);
+            margin-bottom: 5px;
+            font-size: 0.95em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .obbligatorio { color: #d9534f; margin-left: 3px; }
+
+        /* Input eleganti */
+        .form-control, .form-select, textarea {
+            background-color: var(--input-bg);
+            border: 1px solid #e0e0e0;
+            color: #333;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .form-control:focus, .form-select:focus, textarea:focus {
+            background-color: #fff;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(176, 141, 85, 0.2);
+            color: #333;
+        }
+
+        /* Griglia Bottoni Orari */
+        #zona-orari {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn-orario {
+            background-color: #fff;
+            border: 1px solid var(--accent-color);
+            color: var(--primary-text);
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-orario:hover {
+            background-color: #fcf6ee;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn-orario.selezionato {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(176, 141, 85, 0.4);
+        }
+
+        .btn-prenota {
+            background: var(--primary-text); /* Bottone scuro per contrasto */
+            color: white;
+            font-weight: bold;
+            border: none;
+            margin-top: 25px;
+            padding: 15px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .btn-prenota:hover {
+            background-color: var(--accent-color); /* Diventa bronzo al passaggio */
+            transform: scale(1.01);
+        }
+
+        /* Animazione caricamento */
+        .loading-text { color: var(--accent-color); font-style: italic; }
     </style>
 </head>
 <body>
 
-<div class="card p-4">
-    <h2 class="text-center mb-4">✨ Estro Saloon ✨</h2>
+<div class="card">
+    <div class="card-header-custom">
+        <h2>Estro Saloon</h2>
+    </div>
     
-    <div class="mb-3">
-        <label>Nome e Cognome <span class="obbligatorio">*</span></label>
-        <input type="text" id="nome" class="form-control" placeholder="Mario Rossi">
-    </div>
+    <div class="p-4">
+        <div class="mb-3">
+            <label>Nome e Cognome <span class="obbligatorio">*</span></label>
+            <input type="text" id="nome" class="form-control" placeholder="Inserisci il tuo nome">
+        </div>
 
-    <div class="mb-3">
-        <label>Telefono <span class="obbligatorio">*</span></label>
-        <input type="tel" id="telefono" class="form-control" placeholder="333 1234567">
-    </div>
+        <div class="mb-3">
+            <label>Telefono <span class="obbligatorio">*</span></label>
+            <input type="tel" id="telefono" class="form-control" placeholder="Il tuo numero">
+        </div>
 
-    <div class="mb-3">
-        <label>Servizio <span class="obbligatorio">*</span></label>
-        <select id="servizio" class="form-select">
-            <option value="">Seleziona un servizio...</option>
-            <option>Taglio Donna</option>
-            <option>Piega e Stile</option>
-            <option>Colore Completo</option>
-            <option>Taglio Uomo</option>
-        </select>
-    </div>
+        <div class="mb-3">
+            <label>Servizio <span class="obbligatorio">*</span></label>
+            <select id="servizio" class="form-select">
+                <option value="">Seleziona un trattamento...</option>
+                <option>Taglio Donna</option>
+                <option>Piega e Stile</option>
+                <option>Colore Completo</option>
+                <option>Taglio Uomo</option>
+            </select>
+        </div>
 
-    <div class="mb-3">
-        <label>Data Desiderata <span class="obbligatorio">*</span></label>
-        <input type="date" id="data" class="form-control" onchange="caricaOrari()">
-    </div>
+        <div class="mb-3">
+            <label>Scegli la Data <span class="obbligatorio">*</span></label>
+            <input type="date" id="data" class="form-control" onchange="caricaOrari()">
+        </div>
 
-    <div class="mb-3">
-        <label id="label-orari" style="display:none;">Orari Disponibili <span class="obbligatorio">*</span></label>
-        <div id="zona-orari"></div>
-        <input type="hidden" id="ora_selezionata">
-    </div>
+        <div class="mb-3">
+            <label id="label-orari" style="display:none;">Orari Disponibili <span class="obbligatorio">*</span></label>
+            <div id="zona-orari"></div>
+            <input type="hidden" id="ora_selezionata">
+        </div>
 
-    <div class="mb-3">
-        <label>Note (Facoltativo)</label>
-        <textarea id="note" class="form-control" rows="2" placeholder="Es. Ho i capelli molto lunghi..."></textarea>
-    </div>
+        <div class="mb-3">
+            <label>Note (Facoltativo)</label>
+            <textarea id="note" class="form-control" rows="2" placeholder="Hai richieste particolari?"></textarea>
+        </div>
 
-    <button onclick="inviaPrenotazione()" class="btn btn-prenota w-100">CONFERMA APPUNTAMENTO</button>
+        <button onclick="inviaPrenotazione()" class="btn btn-prenota w-100">Conferma Appuntamento</button>
+    </div>
 </div>
 
 <script>
@@ -79,7 +196,7 @@
         
         if (!dataScelta) return;
 
-        zonaOrari.innerHTML = '<div class="text-white">Caricamento...</div>';
+        zonaOrari.innerHTML = '<div class="loading-text">Controllo disponibilità...</div>';
         labelOrari.style.display = 'block';
 
         const response = await fetch(`/orari-disponibili?data=${dataScelta}`);
@@ -89,7 +206,7 @@
         document.getElementById('ora_selezionata').value = ''; 
 
         if (dati.orari.length === 0) {
-            zonaOrari.innerHTML = '<div class="text-danger">Tutto pieno per oggi! 😔</div>';
+            zonaOrari.innerHTML = '<div class="text-danger">Ci dispiace, giornata completa!</div>';
         } else {
             dati.orari.forEach(ora => {
                 zonaOrari.innerHTML += `<button onclick="selezionaOra(this, '${ora}')" class="btn btn-orario">${ora}</button>`;
@@ -111,9 +228,8 @@
         const ora = document.getElementById('ora_selezionata').value;
         const note = document.getElementById('note').value.trim();
 
-        // Validazione Obbligatoria
         if (!nome || !telefono || !servizio || !data || !ora) {
-            alert("⚠️ Attenzione! Compila tutti i campi obbligatori (segnati con *).");
+            alert("⚠️ Per favore, compila tutti i campi obbligatori.");
             return;
         }
 
@@ -121,7 +237,7 @@
         const response = await fetch(`/prenota?${params}`, { method: 'POST' });
         
         if (response.ok) {
-            alert("✅ Prenotazione Confermata!");
+            alert("✨ Prenotazione Confermata! Ti aspettiamo in salone.");
             location.reload();
         } else {
             const err = await response.json();
