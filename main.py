@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 import models, database, secrets
+import requests # Serve per chiamare Telegram
 
 # Configurazione Iniziale
 models.Base.metadata.create_all(bind=database.engine)
@@ -16,7 +17,6 @@ ORA_APERTURA = 9
 ORA_CHIUSURA = 19
 DURATA_SLOT = 1
 
-# Modello dati per la richiesta di modifica (Pydantic)
 class PrenotazioneUpdate(BaseModel):
     cliente: str
     telefono: str
@@ -43,7 +43,26 @@ def controlla_credenziali(credentials: HTTPBasicCredentials = Depends(security))
         )
     return credentials.username
 
-# --- PAGINE ---
+# --- NUOVA FUNZIONE TELEGRAM ---
+def invia_telegram_admin(messaggio):
+    # DATI DEL BOT (Configurati per te)
+    BOT_TOKEN = "8351298356:AAES6zhwq3gZVwxjNt6GTEYPg4L90gfeoc4" 
+    CHAT_ID = "152592559" # <--- ID INSERITO CORRETTAMENTE!
+    
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": messaggio,
+        "parse_mode": "Markdown" # Permette il grassetto con *testo*
+    }
+    
+    try:
+        requests.post(url, json=payload)
+        print("✅ Notifica Telegram inviata!")
+    except Exception as e:
+        print(f"❌ Errore Telegram: {e}")
+
+# --- PAGINE WEB ---
 @app.get("/")
 def home():
     return FileResponse("index.html")
@@ -71,31 +90,37 @@ def prenota(nome: str, telefono: str, servizio: str, data: str, ora: str, note: 
     nuova = models.Appointment(cliente=nome, telefono=telefono, servizio=servizio, data=data, ora=ora, note=note)
     db.add(nuova)
     db.commit()
+    
+    # --- INVIO NOTIFICA TELEGRAM ---
+    # Usiamo *asterischi* per il grassetto in Telegram
+    msg = f"🔔 *NUOVA PRENOTAZIONE*\n\n👤 {nome}\n✂️ {servizio}\n📅 {data} alle {ora}\n📞 {telefono}"
+    if note:
+        msg += f"\n📝 Note: {note}"
+        
+    invia_telegram_admin(msg)
+    # -------------------------------
+
     return {"status": "successo", "messaggio": "Prenotazione Confermata!"}
 
 @app.get("/lista_appuntamenti")
 def lista(db: Session = Depends(get_db)):
-    # Ordina per Data e poi per Ora
     return db.query(models.Appointment).order_by(models.Appointment.data, models.Appointment.ora).all()
 
-# NUOVO: API per Modificare
 @app.put("/modifica/{id}")
 def modifica_appuntamento(id: int, app_update: PrenotazioneUpdate, db: Session = Depends(get_db)):
     prenotazione = db.query(models.Appointment).filter(models.Appointment.id == id).first()
     if not prenotazione:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
-    # Controlla se il nuovo orario è libero (solo se data o ora sono cambiate)
     if (prenotazione.data != app_update.data) or (prenotazione.ora != app_update.ora):
         occupato = db.query(models.Appointment).filter(
             models.Appointment.data == app_update.data, 
             models.Appointment.ora == app_update.ora,
-            models.Appointment.id != id # Escludi se stesso
+            models.Appointment.id != id
         ).first()
         if occupato:
              raise HTTPException(status_code=400, detail="Il nuovo orario scelto è già occupato!")
 
-    # Aggiorna i dati
     prenotazione.cliente = app_update.cliente
     prenotazione.telefono = app_update.telefono
     prenotazione.servizio = app_update.servizio
