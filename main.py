@@ -176,7 +176,25 @@ def get_orari(data: str, db: Session = Depends(get_db)):
 
 @app.post("/prenota")
 def prenota(nome: str, telefono: str, servizio: str, data: str, ora: str, note: str = "", db: Session = Depends(get_db)):
-    # Verifica doppia prenotazione (Race condition check)
+    # 1. CONTROLLO SICUREZZA: IL GIORNO È APERTO?
+    settings = load_settings()
+    
+    # Check Ferie
+    if data in settings["holidays"]:
+        raise HTTPException(status_code=400, detail="Ci dispiace, in questa data siamo chiusi per ferie!")
+
+    # Check Giorno Settimana
+    try:
+        date_obj = datetime.strptime(data, "%Y-%m-%d")
+        day_name = date_obj.strftime("%A") 
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data non valida")
+
+    day_config = settings["weekly"].get(day_name)
+    if not day_config or not day_config["open"]:
+        raise HTTPException(status_code=400, detail=f"Siamo chiusi di {day_name}!")
+
+    # 2. CONTROLLO SLOT DOPPI (Race condition check)
     esiste = db.query(models.Appointment).filter(models.Appointment.data == data, models.Appointment.ora == ora).first()
     if esiste:
         raise HTTPException(status_code=400, detail="Orario appena occupato da un altro cliente!")

@@ -180,11 +180,17 @@
             <hr class="my-4">
 
             <h4 class="mb-3 text-center" style="color: var(--primary);"><i class="bi bi-calendar-x"></i> Ferie & Chiusure</h4>
-            <div class="input-group mb-3">
-                <input type="date" id="holiday-input" class="form-control">
-                <button class="btn btn-danger" onclick="addHoliday()">Blocca Data</button>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Seleziona solo "Dal" per bloccare un giorno singolo. Seleziona entrambi per un periodo.
             </div>
-            <div id="holidays-list" class="mb-3">
+            <div class="input-group mb-3">
+                <span class="input-group-text">Dal</span>
+                <input type="date" id="holiday-input" class="form-control">
+                <span class="input-group-text">Al</span>
+                <input type="date" id="holiday-end-input" class="form-control">
+                <button class="btn btn-danger" onclick="addHoliday()">Blocca Periodo</button>
+            </div>
+            <div id="holidays-list" class="mb-3 d-flex flex-wrap gap-2">
                 <!-- Chips date chiuse -->
             </div>
 
@@ -292,9 +298,9 @@
             "Tuesday": { open: true, start: "09:00", end: "19:00" },
             "Wednesday": { open: true, start: "09:00", end: "19:00" },
             "Thursday": { open: true, start: "09:00", end: "19:00" },
-            "Friday": { open: true, start: "09:00", end: "19:00" },
-            "Saturday": { open: true, start: "09:00", end: "18:00" },
-            "Sunday": { open: false, start: "09:00", end: "13:00" }
+            "Friday": { open: true, start: "09:00", "end": "19:00" },
+            "Saturday": { open: true, start: "09:00", "end": "18:00" },
+            "Sunday": { open: false, start: "09:00", "end": "13:00" }
         },
         holidays: []
     };
@@ -306,8 +312,7 @@
     // --- AVVIO ---
     document.addEventListener('DOMContentLoaded', () => {
         scaricaDati();
-        renderSettings(); // Inizializza UI impostazioni
-        // Qui potresti chiamare scaricaImpostazioni() se il backend fosse pronto
+        scaricaImpostazioni(); // Ora scarichiamo davvero le impostazioni dal server!
     });
 
     // 1. SCARICA I DATI DAL SERVER
@@ -325,6 +330,19 @@
             }
         } finally {
             mostraLoader(false);
+        }
+    }
+
+    // NUOVA FUNZIONE: SCARICA IMPOSTAZIONI DAL SERVER
+    async function scaricaImpostazioni() {
+        try {
+            const res = await fetch(BASE_URL + '/settings');
+            if (res.ok) {
+                siteSettings = await res.json();
+                renderSettings();
+            }
+        } catch (e) {
+            console.error("Errore caricamento settings:", e);
         }
     }
 
@@ -518,14 +536,47 @@
     }
 
     function addHoliday() {
-        const input = document.getElementById('holiday-input');
-        const val = input.value;
-        if (val && !siteSettings.holidays.includes(val)) {
-            siteSettings.holidays.push(val);
-            siteSettings.holidays.sort();
-            renderHolidaysList();
-            input.value = '';
+        const startInput = document.getElementById('holiday-input');
+        const endInput = document.getElementById('holiday-end-input');
+        
+        const startVal = startInput.value;
+        const endVal = endInput.value;
+
+        if (!startVal) {
+            alert("Inserisci almeno la data di inizio!");
+            return;
         }
+
+        // Se c'è solo la data di inizio, aggiungi solo quella
+        if (!endVal) {
+            if (!siteSettings.holidays.includes(startVal)) {
+                siteSettings.holidays.push(startVal);
+            }
+        } else {
+            // Se c'è un range, calcola tutti i giorni in mezzo
+            let current = new Date(startVal);
+            const end = new Date(endVal);
+
+            if (current > end) {
+                alert("La data di fine non può essere prima di quella di inizio!");
+                return;
+            }
+
+            while (current <= end) {
+                const dateStr = current.toISOString().split('T')[0];
+                if (!siteSettings.holidays.includes(dateStr)) {
+                    siteSettings.holidays.push(dateStr);
+                }
+                current.setDate(current.getDate() + 1);
+            }
+        }
+
+        siteSettings.holidays.sort();
+        renderHolidaysList();
+        
+        // Reset campi
+        startInput.value = '';
+        endInput.value = '';
     }
 
     function removeHoliday(dateVal) {
@@ -550,7 +601,7 @@
     }
 
     async function salvaImpostazioni() {
-        // Aggiorna oggetto settings dai valori DOM
+        // Aggiorna oggetto settings dai valori DOM per gli orari settimanali
         daysENG.forEach(dayEng => {
             const isOpen = document.getElementById(`open-${dayEng}`).checked;
             siteSettings.weekly[dayEng].open = isOpen;
@@ -560,21 +611,18 @@
 
         mostraLoader(true);
         
-        // Qui simulo o chiamo la API vera
         try {
-            // Esempio chiamata API (commentata finché backend non è pronto)
-            /*
+            // CHIAMATA API VERA (SCOMMENTATA)
             const res = await fetch(BASE_URL + '/settings', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(siteSettings)
             });
+            
             if(!res.ok) throw new Error("Errore Salvataggio");
-            */
-
-            // Simulazione successo per UI
-            await new Promise(r => setTimeout(r, 800)); 
-            alert("✅ Impostazioni salvate con successo!");
+            
+            await new Promise(r => setTimeout(r, 500)); // Piccolo delay estetico
+            alert("✅ Impostazioni salvate correttamente sul server!");
             
             // Torna al mese per vedere le modifiche
             cambiaVista('mese');
