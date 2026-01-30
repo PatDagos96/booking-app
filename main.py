@@ -67,10 +67,15 @@ class PrenotazioneUpdate(BaseModel):
     ora: str
     note: Optional[str] = ""
 
-# Modello per validare i dati che arrivano dal pannello Admin
+# Modello per validare i dati che arrivano dal pannello Admin (Impostazioni)
 class SettingsModel(BaseModel):
     weekly: Dict[str, Any]
     holidays: List[str]
+
+# NUOVO MODELLO PER CANCELLAZIONE MULTIPLA
+# Serve a validare la lista di numeri che arriva da admin.html
+class ListaID(BaseModel):
+    ids: List[int]
 
 # --- DIPENDENZE ---
 def get_db():
@@ -115,11 +120,11 @@ def invia_telegram_admin(messaggio):
 # --- PAGINE WEB ---
 @app.get("/")
 def home():
-    return FileResponse("index.html") # Assicurati che il file index_client.html sia rinominato index.html
+    return FileResponse("index.html")
 
 @app.get("/admin")
 def pannello_admin(username: str = Depends(controlla_credenziali)):
-    return FileResponse("admin.html") # Assicurati che il file index_admin.html sia rinominato admin.html
+    return FileResponse("admin.html")
 
 # --- API ---
 
@@ -129,7 +134,8 @@ def get_settings_api():
     return load_settings()
 
 @app.post("/settings")
-def update_settings_api(settings: SettingsModel): # Potresti aggiungere Depends(controlla_credenziali) per sicurezza
+def update_settings_api(settings: SettingsModel): 
+    # Salviamo le modifiche inviate dal pannello Admin
     save_settings_to_file(settings.dict())
     return {"message": "Impostazioni aggiornate"}
 
@@ -194,7 +200,7 @@ def prenota(nome: str, telefono: str, servizio: str, data: str, ora: str, note: 
     if not day_config or not day_config["open"]:
         raise HTTPException(status_code=400, detail=f"Siamo chiusi di {day_name}!")
 
-    # 2. CONTROLLO SLOT DOPPI (Race condition check)
+    # 2. Verifica doppia prenotazione (Race condition check)
     esiste = db.query(models.Appointment).filter(models.Appointment.data == data, models.Appointment.ora == ora).first()
     if esiste:
         raise HTTPException(status_code=400, detail="Orario appena occupato da un altro cliente!")
@@ -248,3 +254,12 @@ def cancella(id: int, db: Session = Depends(get_db)):
         db.delete(item)
         db.commit()
     return {"ok": True}
+
+# --- NUOVA API PER CANCELLAZIONE MULTIPLA ---
+@app.post("/cancella-multipli")
+def cancella_multipli(lista: ListaID, db: Session = Depends(get_db)):
+    # La query .in_() seleziona tutti gli ID presenti nella lista e li cancella in un colpo solo
+    # synchronize_session=False serve per ottimizzare l'operazione
+    db.query(models.Appointment).filter(models.Appointment.id.in_(lista.ids)).delete(synchronize_session=False)
+    db.commit()
+    return {"ok": True, "messaggio": f"Cancellati {len(lista.ids)} appuntamenti"}
