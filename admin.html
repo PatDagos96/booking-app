@@ -320,6 +320,28 @@
         render();
     }
 
+    // --- NAVIGAZIONE CORRETTA (FIX FEBBRAIO) ---
+    function naviga(dir) {
+        if (currentView === 'mese') {
+            // FIX: Imposta giorno a 1 prima di cambiare mese per evitare overflow (es. 30 Gen -> 30 Feb -> 2 Mar)
+            currentDate.setDate(1); 
+            currentDate.setMonth(currentDate.getMonth() + dir);
+        } else {
+            currentDate.setDate(currentDate.getDate() + dir);
+        }
+        render();
+    }
+
+    function cambiaVista(view) {
+        currentView = view;
+        render();
+    }
+
+    function vaiAlGiorno(dateIso) {
+        currentDate = new Date(dateIso);
+        cambiaVista('giorno');
+    }
+
     function disegnaMese() {
         const grid = document.getElementById('month-view');
         grid.innerHTML = '';
@@ -545,25 +567,6 @@
         } finally {
             mostraLoader(false);
         }
-    }
-
-    function naviga(dir) {
-        if (currentView === 'mese') {
-            currentDate.setMonth(currentDate.getMonth() + dir);
-        } else {
-            currentDate.setDate(currentDate.getDate() + dir);
-        }
-        render();
-    }
-
-    function cambiaVista(view) {
-        currentView = view;
-        render();
-    }
-
-    function vaiAlGiorno(dateIso) {
-        currentDate = new Date(dateIso);
-        cambiaVista('giorno');
     }
 
     function apriNuovo() {
