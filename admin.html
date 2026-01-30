@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Gestionale Estro Saloon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f4f6f8; font-family: 'Segoe UI', sans-serif; }
@@ -27,6 +28,7 @@
         .cliente-dettagli { font-size: 0.9rem; color: #666; }
         .cliente-note { font-size: 0.85rem; color: #d63384; font-style: italic; margin-top: 2px; }
 
+        .azioni { min-width: 100px; text-align: right; }
         .azioni button { margin-left: 5px; }
     </style>
 </head>
@@ -74,10 +76,15 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    let appuntamentiGlobali = []; // Qui salviamo i dati in memoria (La Soluzione!)
 
     async function caricaAppuntamenti() {
         const res = await fetch('/lista_appuntamenti');
         const dati = await res.json();
+        
+        // Salviamo i dati nella variabile globale così non si rompono con gli apostrofi
+        appuntamentiGlobali = dati; 
+
         const container = document.getElementById('lista-agenda');
         container.innerHTML = '';
 
@@ -95,13 +102,13 @@
 
         // Genera HTML per ogni giorno
         for (const [data, appuntamenti] of Object.entries(gruppi)) {
-            // Formatta data bella (es. 2026-01-30 -> 30/01/2026)
             const dataBella = data.split('-').reverse().join('/');
             
             let htmlGruppo = `<div class="giorno-container">
                 <div class="data-header">🗓️ ${dataBella}</div>`;
             
             appuntamenti.forEach(app => {
+                // ORA PASSIAMO SOLO L'ID (app.id) - È indistruttibile!
                 htmlGruppo += `
                 <div class="appuntamento-item">
                     <div class="info-time">${app.ora}</div>
@@ -111,7 +118,7 @@
                         ${app.note ? `<div class="cliente-note">📝 Note: ${app.note}</div>` : ''}
                     </div>
                     <div class="azioni">
-                        <button onclick='apriModifica(${JSON.stringify(app)})' class="btn btn-outline-primary btn-sm">✏️ Modifica</button>
+                        <button onclick="apriModifica(${app.id})" class="btn btn-outline-primary btn-sm">✏️ Modifica</button>
                         <button onclick="elimina(${app.id})" class="btn btn-outline-danger btn-sm">🗑️</button>
                     </div>
                 </div>`;
@@ -129,16 +136,23 @@
         }
     }
 
-    // Funzioni per la Modifica
-    function apriModifica(app) {
-        document.getElementById('edit-id').value = app.id;
-        document.getElementById('edit-cliente').value = app.cliente;
-        document.getElementById('edit-telefono').value = app.telefono || '';
-        document.getElementById('edit-servizio').value = app.servizio;
-        document.getElementById('edit-data').value = app.data;
-        document.getElementById('edit-ora').value = app.ora;
-        document.getElementById('edit-note').value = app.note || '';
-        editModal.show();
+    // Funzione Modifica Aggiornata e Sicura
+    function apriModifica(id) {
+        // Cerca l'appuntamento nella memoria usando l'ID
+        const app = appuntamentiGlobali.find(a => a.id === id);
+        
+        if (app) {
+            document.getElementById('edit-id').value = app.id;
+            document.getElementById('edit-cliente').value = app.cliente;
+            document.getElementById('edit-telefono').value = app.telefono || '';
+            document.getElementById('edit-servizio').value = app.servizio;
+            document.getElementById('edit-data').value = app.data;
+            document.getElementById('edit-ora').value = app.ora;
+            document.getElementById('edit-note').value = app.note || '';
+            editModal.show();
+        } else {
+            alert("Errore: impossibile trovare i dati di questo appuntamento.");
+        }
     }
 
     async function salvaModifiche() {
